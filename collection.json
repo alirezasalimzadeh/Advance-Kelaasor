@@ -1,0 +1,237 @@
+{
+  "info": {
+    "name": "Courses API",
+    "_postman_id": "bfa9f2f5-4d64-4db5-b0d9-111111111111",
+    "description": "Postman collection for Django Courses App endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/categories/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "List Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/courses/"
+          }
+        },
+        {
+          "name": "Retrieve Course (by slug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/courses/{{slug}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Editions",
+      "item": [
+        {
+          "name": "List Editions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/editions/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lessons",
+      "item": [
+        {
+          "name": "List Lessons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/lessons/"
+          }
+        },
+        {
+          "name": "Retrieve Lesson",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/lessons/{{id}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enrollments",
+      "item": [
+        {
+          "name": "List Enrollments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/enrollments/"
+          }
+        },
+        {
+          "name": "Create Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n \"edition_id\": 1\n}"
+            },
+            "url": "{{base_url}}/api/enrollments/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n \"edition_id\": 1,\n \"coupon_code\": \"OFF20\"\n}"
+            },
+            "url": "{{base_url}}/api/orders/"
+          }
+        },
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/orders/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n \"subject\": \"مشکل در پرداخت\",\n \"message\": \"پرداخت من انجام شده ولی ثبت‌نام نشدم.\"\n}"
+            },
+            "url": "{{base_url}}/api/tickets/"
+          }
+        },
+        {
+          "name": "List Tickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/tickets/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Webhook",
+      "item": [
+        {
+          "name": "Webhook Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n \"order_id\": 1,\n \"payment_ref\": \"PAY123456\"\n}"
+            },
+            "url": "{{base_url}}/api/payment/webhook/"
+          }
+        }
+      ]
+    }
+  ]
+}
