@@ -1,0 +1,72 @@
+from rest_framework.permissions import BasePermission
+
+
+class IsSuperAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.is_superuser
+                and request.user.is_staff
+                and request.user.profile.has_role("super_admin")
+        )
+
+
+class IsSupportAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.is_staff
+                and request.user.is_active
+                and request.user.profile.has_role("support_admin")
+        )
+
+
+class IsFinancialAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.is_staff
+                and request.user.is_active
+                and request.user.profile.has_role("financial_admin")
+        )
+
+
+class IsEducationAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.is_staff
+                and request.user.is_active
+                and request.user.profile.has_role("education_admin")
+        )
+
+
+class IsInstructor(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.is_active
+                and request.user.profile.has_role("instructor")
+        )
+
+
+class IsStudent(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.is_active
+                and request.user.profile.has_role("student")
+        )
+
+
+class IsGuest(BasePermission):
+    def has_permission(self, request, view):
+        return not request.user.is_authenticated
+
+
+class IsSystem(BasePermission):
+    def has_permission(self, request, view):
+        return (
+                request.user.is_authenticated
+                and request.user.profile.has_role("system")
+        )
