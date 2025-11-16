@@ -9,6 +9,7 @@ and Role model for flexible role management.
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from accounts.user_managers import UserManager
+from accounts.validator import validate_phone_number
 
 
 class User(AbstractUser):
@@ -20,7 +21,7 @@ class User(AbstractUser):
     first_name = None
     last_name = None
     email = None
-    phone_number = models.CharField(max_length=11, unique=True)
+    phone_number = models.CharField(max_length=11, unique=True, validators=[validate_phone_number])
 
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = []
