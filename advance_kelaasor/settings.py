@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'mptt',
     'django_filters',
-
+    'accounts.apps.AccountsConfig'
 
 ]
 
