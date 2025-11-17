@@ -65,6 +65,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class BasePhoneSerializer(serializers.Serializer):
+    """
+    Base serializer for phone number validation.
+    Ensures phone number is required, non-blank, and passes custom validator.
+    """
     phone_number = serializers.CharField(
         allow_blank=False,
         required=True,
@@ -77,10 +81,18 @@ class BasePhoneSerializer(serializers.Serializer):
 
 
 class SendOTPSerializer(BasePhoneSerializer):
+    """
+    Serializer for sending OTP.
+    Inherits phone number validation from BasePhoneSerializer.
+    """
     pass
 
 
 class VerifyOTPSerializer(BasePhoneSerializer):
+    """
+    Serializer for verifying OTP.
+    Extends BasePhoneSerializer with an additional code field.
+    """
     code = serializers.CharField(
         validators=[validate_code],
         error_messages={
