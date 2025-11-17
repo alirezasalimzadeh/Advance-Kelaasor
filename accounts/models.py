@@ -122,6 +122,10 @@ class UserProfile(models.Model):
 
 
 class OTP(models.Model):
+    """
+    Model representing one-time password (OTP) for phone verification.
+    Tracks code, expiration, attempts, and verification status.
+    """
     phone_number = models.CharField(max_length=11, db_index=True)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -129,8 +133,18 @@ class OTP(models.Model):
     is_verified = models.BooleanField(default=False)
     attempts = models.PositiveIntegerField(default=0)
 
+    MAX_ATTEMPTS = 5
+
     def is_expired(self):
         return timezone.now() > self.expires_at or self.attempts >= 5
+
+    def can_attempt(self):
+        return (not self.is_verified) and (self.attempts < self.MAX_ATTEMPTS) and (not self.is_expired())
+
+    def increment_attempts(self):
+        self.attempts = models.F('attempts') + 1
+        self.save(update_fields=['attempts'])
+        self.refresh_from_db(fields=['attempts'])
 
     def mark_used(self):
         self.is_verified = True
