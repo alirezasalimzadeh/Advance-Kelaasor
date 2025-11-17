@@ -1,9 +1,17 @@
 from django.core.exceptions import ValidationError
 
+
 def validate_phone_number(value):
     if not value.isdigit():
-        raise ValidationError("Phone number must contain only digits.")
+        raise ValidationError("شماره باید فقط شامل اعداد باشد.")
     if len(value) != 11:
-        raise ValidationError("Phone number must be exactly 11 digits.")
+        raise ValidationError("شماره باید ۱۱ رقم باشد.")
     if not value.startswith("09"):
-        raise ValidationError("Phone number must start with 09.")
+        raise ValidationError("شماره باید با 09 شروع شود.")
+
+
+def validate_code(value):
+    if not value.isdigit():
+        raise ValidationError("کد تأیید فقط باید شامل ارقام باشد.")
+    if len(value) != 6:
+        raise ValidationError("کد تأیید باید 6 رقم باشد.")
