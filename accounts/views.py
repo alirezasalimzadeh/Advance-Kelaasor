@@ -2,6 +2,7 @@ import random
 from datetime import timedelta
 
 from django.utils import timezone
+from django.core.cache import cache
 from django.db import transaction
 
 from rest_framework import generics, viewsets, views
@@ -14,6 +15,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts import serializers
 from accounts.models import User, Role, UserProfile, OTP
 from accounts import permissions
+from accounts.send_sms import send_sms
+
 
 
 class SuperAdminUserViewSet(viewsets.ModelViewSet):
@@ -82,6 +85,10 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 
 class SendOTPView(CreateAPIView):
+    """
+    API view to generate and send OTP via SMS.
+    Prevents spam with caching and handles SMS delivery errors.
+    """
     serializer_class = serializers.SendOTPSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -89,14 +96,32 @@ class SendOTPView(CreateAPIView):
     @transaction.atomic
     def perform_create(self, serializer):
         phone = serializer.validated_data['phone_number']
-        OTP.objects.filter(phone_number=phone).delete()
-        otp = OTP.objects.create(phone_number=phone,
-                                 code=str(random.randint(100000, 999999)),
-                                 expires_at=timezone.now() + timedelta(minutes=2))
-        print(f"OTP for {otp.phone_number}: {otp.code}")
+        cache_key = f"otp_sent_{phone}"
+        if cache.get(cache_key):
+            raise ValidationError("لطفا چند ثانیه صبر کنید و دوباره تلاش کنید.")
+
+        OTP.objects.filter(phone_number=phone, is_verified=False).update(expires_at=timezone.now())
+
+        otp = OTP.objects.create(
+            phone_number=phone,
+            code=str(random.randint(100000, 999999)),
+            expires_at=timezone.now() + timedelta(minutes=2)
+        )
+
+        text = f"کد تأیید شما: {otp.code}"
+
+        cache.set(cache_key, True, timeout=60)
+
+        success = send_sms(phone, text)
+        if not success:
+            raise ValidationError("ارسال پیامک با مشکل مواجه شد. لطفاً دوباره تلاش کنید.")
 
 
 class VerifyOTPView(views.APIView):
+    """
+    API view to verify OTP codes.
+    Validates attempts, marks OTP as used, and returns JWT tokens for the user.
+    """
     authentication_classes = []
     permission_classes = [AllowAny]
 
@@ -106,22 +131,29 @@ class VerifyOTPView(views.APIView):
 
         phone = serializer.validated_data['phone_number']
         code = serializer.validated_data['code']
-        otp = OTP.objects.filter(phone_number=phone, is_verified=False).last()
+
+        with transaction.atomic():
+            otp = OTP.objects.select_for_update().filter(
+                phone_number=phone, is_verified=False
+            ).order_by('-created_at').first()
 
         if not otp:
-            return Response({"error": "کد اشتباه یا نامعتبر است"}, status=400)
+            return Response({"error": "کد نامعتبر است"}, status=400)
 
-        otp.attempts += 1
-        otp.save(update_fields=["attempts"])
+        otp.increment_attempts()
 
-        if otp.is_expired() or otp.code != code:
-            if otp.attempts >= 5:
-                return Response({"error": "تعداد تلاش‌های شما بیش از حد مجاز است. لطفاً کد جدید دریافت کنید."},
-                                status=400)
-            return Response({"error": "کد اشتباه یا نامعتبر است"}, status=400)
+        if not otp.can_attempt():
+            return Response({"error": "تعداد تلاش‌های شما بیش از حد مجاز است. لطفاً کد جدید دریافت کنید."}, status=400)
+
+        if otp.code != code:
+            return Response({"error": "کد اشتباه است"}, status=400)
 
         otp.mark_used()
-        user, created = User.objects.get_or_create(phone_number=phone)
+
+        user, created = User.objects.get_or_create(
+            phone_number=phone,
+            defaults={'is_active': True}
+        )
         refresh = RefreshToken.for_user(user)
 
         return Response({
@@ -131,15 +163,21 @@ class VerifyOTPView(views.APIView):
             "message": "Sign up" if created else "Sign in",
         })
 
+
 class LogoutView(views.APIView):
+    """
+    API view to blacklist a refresh token and log out the user.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        try:
-            refresh_token = request.data.get("refresh")
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"message": "با موفقیت خارج شدید"}, status=200)
+        token = request.data.get("refresh")
+        if not token:
+            return Response({"error": "توکن refresh ارسال نشده است."}, status=400)
 
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
+        try:
+            RefreshToken(token).blacklist()
+            return Response({"message": "با موفقیت خارج شدید"}, status=200)
+        except Exception:
+            return Response({"error": "توکن نامعتبر یا از قبل باطل شده است."}, status=400)
+
