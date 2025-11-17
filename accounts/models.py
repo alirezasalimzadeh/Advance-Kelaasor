@@ -10,6 +10,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from accounts.user_managers import UserManager
 from accounts.validator import validate_phone_number
+from django_jalali.db import models as jmodels
 
 
 class User(AbstractUser):
@@ -65,10 +66,11 @@ class UserProfile(models.Model):
     bio = models.TextField(blank=True)
 
     job_title = models.CharField(max_length=100, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
+    birth_date = jmodels.jDateField(null=True, blank=True)
     province = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
     address = models.TextField(blank=True)
+    membership_date = jmodels.jDateField(auto_now_add=True)
 
     @property
     def full_name(self):
