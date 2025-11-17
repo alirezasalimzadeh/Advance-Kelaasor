@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import User, Role, UserProfile
+from accounts.models import User, Role, UserProfile
+from accounts.validator import validate_phone_number, validate_code
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -7,10 +8,11 @@ class UserSerializer(serializers.ModelSerializer):
     Serializer for the User model.
     Only exposes phone_number since login is based on it.
     """
+    full_name = serializers.CharField(source="profile.full_name", read_only=True)
 
     class Meta:
         model = User
-        fields = ["id", "phone_number"]
+        fields = ["id", "phone_number", "full_name"]
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -49,7 +51,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     Includes personal information and related roles.
     """
     user = UserSerializer(read_only=True)  # show user info
-    roles = RoleSerializer(many=True, read_only=True)   # show roles
+    roles = RoleSerializer(many=True, read_only=True)  # show roles
     birth_date = serializers.DateField(format="%Y/%m/%d", required=False)
     membership_date = serializers.DateField(format="%Y/%m/%d", read_only=True)
     avatar = serializers.ImageField(use_url=True, required=False)
@@ -60,3 +62,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = '__all__'
         read_only_fields = ["membership_date", "roles"]
+
+
+class BasePhoneSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(
+        allow_blank=False,
+        required=True,
+        validators=[validate_phone_number],
+        error_messages={
+            "blank": "شماره موبایل نمی‌تواند خالی باشد.",
+            "required": "وارد کردن شماره موبایل الزامی است."
+        }
+    )
+
+
+class SendOTPSerializer(BasePhoneSerializer):
+    pass
+
+
+class VerifyOTPSerializer(BasePhoneSerializer):
+    code = serializers.CharField(
+        validators=[validate_code],
+        error_messages={
+            "blank": "کد تأیید نمی‌تواند خالی باشد.",
+            "required": "وارد کردن کد تأیید الزامی است."
+        }
+    )
