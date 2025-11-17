@@ -9,10 +9,9 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from datetime import timedelta
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +25,7 @@ SECRET_KEY = 'django-insecure-ey-%j4tnnluya-g%pmkj48!f!y+au8+qejs)m$yx8tnv)$uo_c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Application definition
 
@@ -40,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    #external apps
+    # external apps
     'django_jalali',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -129,10 +128,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -156,9 +153,6 @@ JALALI_SETTINGS = {
     },
 }
 
-
-
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -177,3 +171,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'ROTATE_REFRESH_TOKENS': True,
 }
+
+KAVENEGAR_API_KEY = "63502B38464C62756F6663464E617A57566A6773615973307742636239757A365A6558392F6454703850343D"
+KAVENEGAR_SENDER = "2000660110"
+
