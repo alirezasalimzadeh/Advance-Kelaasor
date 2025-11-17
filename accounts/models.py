@@ -3,14 +3,17 @@ Accounts app models.
 
 Defines custom User model (with phone_number as login field),
 UserProfile for extended personal details and roles,
-and Role model for flexible role management.
+Role model for flexible role management,
+and OTP model for send sms code.
 """
 
-from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+from django_jalali.db import models as jmodels
+
 from accounts.user_managers import UserManager
 from accounts.validator import validate_phone_number
-from django_jalali.db import models as jmodels
 
 
 class User(AbstractUser):
@@ -116,3 +119,22 @@ class UserProfile(models.Model):
         full_name = self.full_name if self.full_name else self.user.phone_number
         roles = ", ".join(self.get_roles()) if self.roles.exists() else "No roles"
         return f"{full_name} ({roles})"
+
+
+class OTP(models.Model):
+    phone_number = models.CharField(max_length=11, db_index=True)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_verified = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=0)
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at or self.attempts >= 5
+
+    def mark_used(self):
+        self.is_verified = True
+        self.save(update_fields=["is_verified"])
+
+    def __str__(self):
+        return f"OTP for {self.phone_number} ({'used' if self.is_verified else 'not used'})"
