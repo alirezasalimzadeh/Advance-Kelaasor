@@ -1,6 +1,17 @@
 from rest_framework.permissions import BasePermission
 
 
+class IsOwnerProfile(BasePermission):
+    """
+    Permission class that grants access only to the owner of the profile.
+    Ensures that a user can view or modify their own profile but not others.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Check if the profile belongs to the authenticated user
+        return obj.user == request.user
+
+
 class IsSuperAdmin(BasePermission):
     """Full access to everything."""
 
