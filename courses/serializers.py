@@ -34,3 +34,12 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 
+# -------------------- COURSE EDITION --------------------
+
+class GroupPricingSerializer(serializers.ModelSerializer):
+    """Serializer for group pricing tiers."""
+    class Meta:
+        model = models.GroupPricing
+        fields = '__all__'
+
+
