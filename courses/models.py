@@ -54,4 +54,30 @@ class CourseMedia(models.Model):
         return self.alt_text
 
 
+# -------------------- COURSE --------------------
+
+class Course(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    short_description = models.TextField(blank=True)
+    long_description = models.TextField(blank=True)
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name='courses')
+    media = models.ManyToManyField(CourseMedia, blank=True)
+    session_count = models.PositiveIntegerField(null=True, blank=True)
+    is_published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)[:255]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
 
