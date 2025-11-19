@@ -11,6 +11,7 @@ from accounts.models import User, UserProfile
 # -------------------- CATEGORY --------------------
 
 class Category(models.Model):
+    """Hierarchical category for courses (supports parent-child)."""
     title = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
@@ -25,6 +26,7 @@ class Category(models.Model):
         ]
 
     def clean(self):
+        # Prevent self-parenting
         if self.parent_id and self.parent_id == self.id:
             raise ValidationError("Category cannot be parent of itself.")
 
@@ -40,6 +42,7 @@ class Category(models.Model):
 # -------------------- COURSE MEDIA --------------------
 
 class CourseMedia(models.Model):
+    """Media assets for courses (cover, banner, gallery, etc.)."""
     TYPE_CHOICES = [
         ("COVER", "Cover"),
         ("BANNER", "Banner"),
@@ -57,6 +60,7 @@ class CourseMedia(models.Model):
 # -------------------- COURSE --------------------
 
 class Course(models.Model):
+    """Main course entity with descriptions and category."""
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     short_description = models.TextField(blank=True)
@@ -72,6 +76,7 @@ class Course(models.Model):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
+        # Auto-generate slug if missing
         if not self.slug:
             self.slug = slugify(self.title)[:255]
         super().save(*args, **kwargs)
@@ -83,6 +88,7 @@ class Course(models.Model):
 # ------------------- COURSE EDITION --------------------
 
 class CourseEdition(models.Model):
+    """Specific edition of a course (online/offline, pricing, dates)."""
     ONLINE = 'online'
     OFFLINE = 'offline'
     TYPE_CHOICES = [(ONLINE, 'Online'), (OFFLINE, 'Offline')]
@@ -109,10 +115,10 @@ class CourseEdition(models.Model):
     price = models.PositiveIntegerField(default=0)
     allow_group_purchase = models.BooleanField(default=False)
 
-    # قوانین کسب‌وکار آنلاین/آفلاین
-    enroll_open_from = models.DateField(null=True, blank=True)  # فقط آنلاین معنا دارد
-    enroll_open_until = models.DateField(null=True, blank=True)  # فقط آنلاین معنا دارد
-    access_duration_days = models.PositiveIntegerField(null=True, blank=True)  # آفلاین: مدت دسترسی
+    # Business rules fields
+    enroll_open_from = models.DateField(null=True, blank=True)
+    enroll_open_until = models.DateField(null=True, blank=True)
+    access_duration_days = models.PositiveIntegerField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -122,18 +128,18 @@ class CourseEdition(models.Model):
         ordering = ['-start_date']
 
     def clean(self):
-        # اعتبارسنجی بازه ثبت‌نام آنلاین
+        # Validate enrollment window for online
         if self.type == self.ONLINE:
             if self.enroll_open_until and self.start_date and self.enroll_open_until > self.start_date:
                 raise ValidationError(
                     {"enroll_open_until": "Enroll until must be on or before start_date for online editions."})
-        # اعتبارسنجی مدت دسترسی آفلاین
+        # Validate access duration for offline
         if self.type == self.OFFLINE and not self.access_duration_days:
             raise ValidationError({"access_duration_days": "Offline editions must define access_duration_days."})
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            # اسلاگ ترکیبی تا طبیعی‌تر یکتا شود
+            # Auto slug with course prefix
             base = slugify(f"{self.course.slug}-{self.title}")[:255]
             self.slug = base
         super().save(*args, **kwargs)
@@ -149,6 +155,7 @@ class CourseEdition(models.Model):
         return max(self.capacity - self.seats_taken, 0)
 
     def get_price(self, participants=1):
+        # Group pricing logic
         if not self.allow_group_purchase or participants <= 1:
             return self.price
         tier = self.group_pricings.filter(min_participants__lte=participants).order_by("-min_participants").first()
@@ -166,6 +173,7 @@ class CourseEdition(models.Model):
 # -------------------- GROUP PRICING --------------------
 
 class GroupPricing(models.Model):
+    """Tiered group pricing for course editions."""
     edition = models.ForeignKey(CourseEdition, related_name="group_pricings", on_delete=models.CASCADE)
     min_participants = models.PositiveIntegerField()
     price_per_person = models.PositiveIntegerField()
@@ -177,6 +185,7 @@ class GroupPricing(models.Model):
 # -------------------- MODULE --------------------
 
 class Module(models.Model):
+    """Course module (unit) inside an edition."""
     title = models.CharField(max_length=255)
     edition = models.ForeignKey(CourseEdition, related_name='modules', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
@@ -186,6 +195,7 @@ class Module(models.Model):
         unique_together = ('edition', 'order')
 
     def save(self, *args, **kwargs):
+        # Auto-increment order safely
         with transaction.atomic():
             if not self.order:
                 last_order = Module.objects.select_for_update().filter(edition=self.edition).aggregate(
@@ -201,6 +211,7 @@ class Module(models.Model):
 # -------------------- LESSON --------------------
 
 class Lesson(models.Model):
+    """Lesson inside a module (may include video)."""
     title = models.CharField(max_length=255)
     module = models.ForeignKey("Module", related_name="lessons", on_delete=models.CASCADE)
     content = models.TextField(blank=True)
@@ -232,6 +243,7 @@ class Lesson(models.Model):
 # -------------------- ATTACHMENT --------------------
 
 class Attachment(models.Model):
+    """Attachment file for a lesson (exercise, PDF, etc.)."""
     title = models.CharField(max_length=255)
     lesson = models.ForeignKey("Lesson", related_name="attachments", on_delete=models.CASCADE)
     file = models.FileField(upload_to="lessons/attachments/")
@@ -264,15 +276,14 @@ class Attachment(models.Model):
 # -------------------- ENROLLMENT --------------------
 
 class Enrollment(models.Model):
+    """Represents a user's enrollment in a specific course edition."""
     edition = models.ForeignKey(CourseEdition, related_name="enrollments", on_delete=models.CASCADE)
     user = models.ForeignKey(UserProfile, related_name="enrollments", on_delete=models.CASCADE)
-    # خرید گروهی: کسی که خرید را انجام داده (ممکن است خود کاربر نباشد)
+    # Group purchase: the buyer may differ from the enrolled user
     purchased_by = models.ForeignKey(UserProfile, related_name="purchases_made", on_delete=models.SET_NULL, null=True,
                                      blank=True)
-
     is_active = models.BooleanField(default=True)
-    access_expires_at = models.DateTimeField(null=True, blank=True)  # برای آفلاین: زمان پایان دسترسی
-
+    access_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -283,13 +294,13 @@ class Enrollment(models.Model):
         ]
 
     def clean(self):
-        # جلوگیری از ثبت‌نام بعد از پایان مهلت ثبت‌نام آنلاین
+        # Prevent enrollment after online registration deadline
         if self.edition.type == CourseEdition.ONLINE:
             from django.utils import timezone
             today = timezone.now().date()
             if self.edition.enroll_open_until and today > self.edition.enroll_open_until:
                 raise ValidationError("Enrollment is closed for this online edition.")
-        # ظرفیت
+        # Check capacity availability
         if self.edition.capacity is not None and self.edition.available_seats == 0:
             raise ValidationError("No seats available for this edition.")
 
