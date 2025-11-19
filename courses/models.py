@@ -261,4 +261,37 @@ class Attachment(models.Model):
         return f"{self.lesson.title} - {self.title}"
 
 
+# -------------------- ENROLLMENT --------------------
 
+class Enrollment(models.Model):
+    edition = models.ForeignKey(CourseEdition, related_name="enrollments", on_delete=models.CASCADE)
+    user = models.ForeignKey(UserProfile, related_name="enrollments", on_delete=models.CASCADE)
+    # خرید گروهی: کسی که خرید را انجام داده (ممکن است خود کاربر نباشد)
+    purchased_by = models.ForeignKey(UserProfile, related_name="purchases_made", on_delete=models.SET_NULL, null=True,
+                                     blank=True)
+
+    is_active = models.BooleanField(default=True)
+    access_expires_at = models.DateTimeField(null=True, blank=True)  # برای آفلاین: زمان پایان دسترسی
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("edition", "user")
+        indexes = [
+            models.Index(fields=['edition', 'user']),
+            models.Index(fields=['user', 'is_active']),
+        ]
+
+    def clean(self):
+        # جلوگیری از ثبت‌نام بعد از پایان مهلت ثبت‌نام آنلاین
+        if self.edition.type == CourseEdition.ONLINE:
+            from django.utils import timezone
+            today = timezone.now().date()
+            if self.edition.enroll_open_until and today > self.edition.enroll_open_until:
+                raise ValidationError("Enrollment is closed for this online edition.")
+        # ظرفیت
+        if self.edition.capacity is not None and self.edition.available_seats == 0:
+            raise ValidationError("No seats available for this edition.")
+
+    def __str__(self):
+        return f"{self.user} -> {self.edition}"
