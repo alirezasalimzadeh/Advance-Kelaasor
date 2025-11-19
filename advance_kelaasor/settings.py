@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'mptt',
     'django_filters',
-    'accounts.apps.AccountsConfig'
+    'accounts.apps.AccountsConfig',
+    'courses.apps.CoursesConfig'
 
 ]
 
