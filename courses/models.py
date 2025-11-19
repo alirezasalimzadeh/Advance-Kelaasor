@@ -37,4 +37,21 @@ class Category(models.Model):
         return self.title
 
 
+# -------------------- COURSE MEDIA --------------------
+
+class CourseMedia(models.Model):
+    TYPE_CHOICES = [
+        ("COVER", "Cover"),
+        ("BANNER", "Banner"),
+        ("ICON", "Icon"),
+        ("GALLERY", "Gallery"),
+    ]
+    image = models.ImageField(upload_to="courses/media/")
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    alt_text = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.alt_text
+
+
 
