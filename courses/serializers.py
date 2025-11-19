@@ -83,4 +83,14 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# -------------------- ATTACHMENT --------------------
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    """Serializer for lesson attachments."""
+
+    class Meta:
+        model = models.Attachment
+        fields = '__all__'
+
+
 
