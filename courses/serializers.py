@@ -63,4 +63,14 @@ class CourseEditionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# -------------------- MODULE --------------------
+
+class ModuleSerializer(serializers.ModelSerializer):
+    """Serializer for course modules."""
+
+    class Meta:
+        model = models.Module
+        fields = '__all__'
+
+
 
