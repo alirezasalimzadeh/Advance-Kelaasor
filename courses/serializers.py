@@ -13,3 +13,11 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# -------------------- COURSE MEDIA --------------------
+
+class CourseMediaSerializer(serializers.ModelSerializer):
+    """Serializer for course media assets."""
+    class Meta:
+        model = models.CourseMedia
+        fields = '__all__'
+
