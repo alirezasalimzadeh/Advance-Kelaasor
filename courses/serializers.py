@@ -73,4 +73,14 @@ class ModuleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# -------------------- LESSON --------------------
+
+class LessonSerializer(serializers.ModelSerializer):
+    """Serializer for lessons inside modules."""
+
+    class Meta:
+        model = models.Lesson
+        fields = '__all__'
+
+
 
