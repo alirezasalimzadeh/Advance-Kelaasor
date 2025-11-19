@@ -229,4 +229,36 @@ class Lesson(models.Model):
         return f"{self.module.title} / {self.title}"
 
 
+# -------------------- ATTACHMENT --------------------
+
+class Attachment(models.Model):
+    title = models.CharField(max_length=255)
+    lesson = models.ForeignKey("Lesson", related_name="attachments", on_delete=models.CASCADE)
+    file = models.FileField(upload_to="lessons/attachments/")
+    file_type = models.CharField(max_length=50, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    file_size = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["order"]
+        indexes = [
+            models.Index(fields=['lesson', 'order']),
+            models.Index(fields=['file_type']),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            mime_type, _ = mimetypes.guess_type(self.file.name)
+            if mime_type:
+                self.file_type = mime_type
+            try:
+                self.file_size = self.file.size
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.lesson.title} - {self.title}"
+
+
 
