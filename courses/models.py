@@ -198,4 +198,35 @@ class Module(models.Model):
         return f"{self.edition.course.title} - {self.title}"
 
 
+# -------------------- LESSON --------------------
+
+class Lesson(models.Model):
+    title = models.CharField(max_length=255)
+    module = models.ForeignKey("Module", related_name="lessons", on_delete=models.CASCADE)
+    content = models.TextField(blank=True)
+    video_file = models.FileField(upload_to="lessons/videos/", null=True, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_free_preview = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["order"]
+        constraints = [models.UniqueConstraint(fields=["module", "order"], name="unique_lesson_order_per_module")]
+        indexes = [
+            models.Index(fields=['module', 'order']),
+            models.Index(fields=['is_free_preview']),
+        ]
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            if not self.order:
+                last_order = Lesson.objects.select_for_update().filter(module=self.module).aggregate(
+                    max_order=Max("order")
+                )["max_order"] or 0
+                self.order = last_order + 1
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.module.title} / {self.title}"
+
+
 
