@@ -46,4 +46,21 @@ class GroupPricingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# -------------------- COURSE EDITION --------------------
+
+
+class CourseEditionSerializer(serializers.ModelSerializer):
+    """Serializer for course editions (online/offline)."""
+    course = serializers.StringRelatedField(read_only=True)
+    instructors = serializers.StringRelatedField(many=True, read_only=True)
+    group_pricings = GroupPricingSerializer(many=True, read_only=True)
+
+    seats_taken = serializers.IntegerField(read_only=True)
+    available_seats = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = models.CourseEdition
+        fields = '__all__'
+
+
 
