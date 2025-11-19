@@ -93,4 +93,14 @@ class AttachmentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# -------------------- ENROLLMENT --------------------
 
+class EnrollmentSerializer(serializers.ModelSerializer):
+    """Serializer for user enrollments in course editions."""
+    edition = serializers.StringRelatedField(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+    purchased_by = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = models.Enrollment
+        fields = '__all__'
