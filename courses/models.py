@@ -163,4 +163,15 @@ class CourseEdition(models.Model):
         return f"{self.course.title} — {self.title}"
 
 
+# -------------------- GROUP PRICING --------------------
+
+class GroupPricing(models.Model):
+    edition = models.ForeignKey(CourseEdition, related_name="group_pricings", on_delete=models.CASCADE)
+    min_participants = models.PositiveIntegerField()
+    price_per_person = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.edition} — {self.min_participants}+ => {self.price_per_person}"
+
+
 
