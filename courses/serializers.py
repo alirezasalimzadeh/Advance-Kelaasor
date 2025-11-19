@@ -21,3 +21,16 @@ class CourseMediaSerializer(serializers.ModelSerializer):
         model = models.CourseMedia
         fields = '__all__'
 
+# -------------------- COURSE --------------------
+
+class CourseSerializer(serializers.ModelSerializer):
+    """Serializer for courses with category and media."""
+    category = CategorySerializer(read_only=True)
+    media = CourseMediaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = models.Course
+        fields = '__all__'
+
+
+
